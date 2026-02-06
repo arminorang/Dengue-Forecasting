@@ -1,0 +1,120 @@
+You could build a multimodal, explainable “Structural Dengue Vulnerability Forecaster” that predicts short‑term dengue risk while showing how structural inequality and environment contribute to each prediction at the neighborhood/municipality level. 
+Core idea
+
+    Train a multimodal model to predict dengue incidence or outbreak probability 1–3 months ahead at district/municipality level, using: past dengue cases, socioeconomic/inequality indicators, climate, and satellite‑derived urban form.
+
+    Wrap the model in an explainability layer that decomposes each prediction into contributions from structural inequality vs climate vs urban environment, providing global (across Brazil) and local (per district) explanations.
+
+    Data modalities and prediction target
+
+    Target
+     
+        Monthly dengue cases or a binary “outbreak” label per district/municipality, e.g., as done in GeoSeeq Dengue and Rio‑focused forecasting.
+
+    Modalities
+    Structural inequality: census variables (income, overcrowding, sanitation, race, education, access to health services), leveraging Brazilian inequality and health surveys.
+    Historical epidemiology: past dengue (and possibly zika/chikungunya) case counts and rates.
+    Climate: temperature, rainfall, humidity indices at monthly resolution.
+
+    Satellite imagery: Sentinel‑2 or a prepared dengue imagery dataset to capture urban density, vegetation, standing water proxies, as in DengueNet‑style work.
+
+    Model and XAI design
+    Multimodal architecture
+        A tabular branch (gradient boosting or MLP) for structural and time‑series features, plus a CNN/ViT encoder for satellite tiles; fuse embeddings before the prediction head.
+
+    Benchmark against a strong tabular model (e.g., CatBoost) like previous explainable dengue forecasters used for Rio de Janeiro.
+
+    Explainability components
+    Global feature importance (SHAP/TreeSHAP or permutation importance) to show, on average, how much structural inequality vs climate vs history drives forecasts.
+    Local explanations per district and month (SHAP values, ICE plots) to reveal why the model flags a particular vulnerable area.
+    For imagery, Grad‑CAM or attention maps over satellite tiles to highlight where in the urban landscape the model “looks” when associating risk (e.g., dense informal settlements vs green zones).
+
+    A simple decomposition: variance explained or performance drop when you ablate entire blocks of features (inequality vs climate vs imagery) to quantify their relative importance.
+
+    How it centers structural inequality
+    Make structural features first‑class citizens: explicitly group features into “structural inequality”, “climate”, “vector/environment”, and “history” and plot their grouped contributions for each prediction.
+    Use partial‑dependence and SHAP interaction plots to examine how inequality and climate interact: e.g., whether heavy rainfall only becomes high‑risk in areas with poor sanitation and high crowding.
+
+    Tie explanations back to the vulnerability framing of the British Academy project, which argues that dengue risk is produced by socio‑spatial inequalities in Brazil rather than just weather–mosquito dynamics.
+
+    Suggested repo deliverables
+    Clean, reproducible pipeline: data download/preprocessing scripts for each modality, model training script, evaluation script, and a small demo notebook that:
+        trains a minimal multimodal model on 1–2 states or a single metropolis (e.g., Rio de Janeiro),
+
+    generates maps of predicted risk vs observed cases, and
+
+    renders a few case‑study districts with SHAP bar plots + satellite activation maps that a public‑health reader can interpret.
+
+    If you tell me your preferred framework (PyTorch Lightning vs pure PyTorch vs scikit‑learn + LightGBM) I can sketch a concrete architecture and XAI workflow that’s realistic to implement in a few weeks
+
+Help me set up this project and get started
+3:21 p.m.
+
+I'll help you set up this Structural Dengue Vulnerability Forecaster project. This is an excellent research direction that combines public health impact with technical innovation in explainable AI.
+
+Let me create a comprehensive project structure and starter code to get you going:
+Dengue Vulnerability Forecaster - Project Setup
+Code 
+
+Now let me create the foundational code files to get you started:
+requirements.txt
+Code 
+Data Download Script - src/data/download.py
+Code 
+Multimodal Model Architecture - src/models/multimodal.py
+Code 
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+# Deep Learning Framework
+torch>=2.0.0
+pytorch-lightning>=2.0.0
+torchvision>=0.15.0
+timm>=0.9.0
+
+# Gradient Boosting
+catboost>=1.2.0
+lightgbm>=4.0.0
+xgboost>=2.0.0
+
+# Explainability
+shap>=0.42.0
+captum>=0.6.0
+lime>=0.2.0
+
+# Geospatial
+geopandas>=0.13.0
+rasterio>=1.3.0
+fiona>=1.9.0
+shapely>=2.0.0
+pyproj>=3.5.0
+earthengine-api>=0.1.360
+sentinelhub>=3.9.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+scipy>=1.10.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+folium>=0.14.0
+
+# Utils
+pyyaml>=6.0
+tqdm>=4.65.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Experiment Tracking
+wandb>=0.15.0
+tensorboard>=2.13.0
+
+# Optional but recommended
+jupyter>=1.0.0
+ipywidgets>=8.0.0
+notebook>=7.0.0
+
