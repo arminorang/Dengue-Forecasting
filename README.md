@@ -124,10 +124,6 @@ data/
 
 ## Installation
 
-### Prerequisites
-- Python 3.10+
-- CUDA-capable GPU (optional, for faster training)
-
 ### Setup
 
 1. **Clone the repository**
@@ -184,7 +180,7 @@ gdf = gpd.read_file("data/map/brazil_municipalities.gpkg")
 df_dengue = pd.read_parquet("data/raw/dengue_data.parquet")
 
 # Create spatial adjacency (run once)
-# See notebooks/exploration.ipynb for full preprocessing
+# See notebooks/gnn.ipynb for full preprocessing
 ```
 
 ### 2. Train the Model
@@ -255,8 +251,6 @@ plt.title('GNN Predictions vs Actual')
 plt.show()
 ```
 
-For complete examples, see `notebooks/exploration.ipynb`.
-
 ## Project Structure
 
 ```
@@ -268,7 +262,7 @@ dengue-gnn-forecasting/
 │   └── map/                    # Geographic data
 │       └── brazil_municipalities.gpkg
 ├── notebooks/
-│   └── exploration.ipynb       # Data exploration and model training
+│   └── gnn.ipynb       # Data exploration and model training
 ├── src/
 │   └── models/
 │       └── gnn.py             # GNN model implementation
@@ -330,7 +324,7 @@ Generated visualizations include:
 - Geographic heatmaps of predictions vs actuals
 - Time series comparisons for selected municipalities
 
-See `notebooks/exploration.ipynb` for interactive visualizations.
+See `notebooks/gnn.ipynb` for interactive visualizations.
 
 ## Contributing
 
@@ -359,4 +353,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - IBGE for geographic boundary data
 - PyTorch Geometric team for the GNN framework
 - Open-source contributors to the scientific Python ecosystem
+
 
