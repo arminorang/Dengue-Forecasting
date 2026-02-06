@@ -16,7 +16,6 @@ A machine learning project leveraging Graph Neural Networks (GNNs) to predict de
 - [Results](#results)
 - [Contributing](#contributing)
 - [License](#license)
-- [Citation](#citation)
 
 ## Overview
 
@@ -74,7 +73,7 @@ MLP Prediction Head
    - 2-layer MLP (64 → 64 → 1)
    - Predicts next week's incidence rate
 
-## 📊 Performance
+## Performance
 
 Evaluation on held-out test set (20% of temporal data):
 
@@ -87,11 +86,11 @@ Evaluation on held-out test set (20% of temporal data):
 | **R²** | 0.54 | Explains 54% of variance |
 
 **Key Findings:**
-- ✅ Model outperforms naive baseline (MASE < 1.0)
-- ✅ Strong performance on avoiding catastrophic errors (RMSSE = 0.69)
-- ✅ Captures meaningful spatial-temporal patterns (R² = 0.54)
+- Model outperforms naive baseline (MASE < 1.0)
+-  Strong performance on avoiding catastrophic errors (RMSSE = 0.69)
+-  Captures meaningful spatial-temporal patterns (R² = 0.54)
 
-## 📁 Dataset
+## Dataset
 
 ### Sources
 - **Dengue Data**: Brazilian Ministry of Health surveillance system
@@ -123,7 +122,7 @@ data/
     └── brazil_municipalities.gpkg  # Geographic boundaries
 ```
 
-## 🚀 Installation
+## Installation
 
 ### Prerequisites
 - Python 3.10+
@@ -167,7 +166,7 @@ scikit-learn>=1.3.0
 pyarrow>=12.0.0
 ```
 
-## 💻 Usage
+## Usage
 
 ### 1. Data Preparation
 
@@ -354,23 +353,10 @@ Contributions are welcome! Please follow these steps:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Citation
-
-If you use this work in your research, please cite:
-
-```bibtex
-@misc{dengue_gnn_2025,
-  title={Dengue Forecasting with Spatiotemporal Graph Neural Networks},
-  author={Your Name},
-  year={2025},
-  publisher={GitHub},
-  url={https://github.com/yourusername/dengue-gnn-forecasting}
-}
-```
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Brazilian Ministry of Health for dengue surveillance data
 - IBGE for geographic boundary data
 - PyTorch Geometric team for the GNN framework
 - Open-source contributors to the scientific Python ecosystem
+
