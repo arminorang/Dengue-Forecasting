@@ -1,415 +1,376 @@
-You could build a multimodal, explainable “Structural Dengue Vulnerability Forecaster” that predicts short‑term dengue risk while showing how structural inequality and environment contribute to each prediction at the neighborhood/municipality level. 
-Core idea
+# Dengue Forecasting with Spatiotemporal Graph Neural Networks
 
-    Train a multimodal model to predict dengue incidence or outbreak probability 1–3 months ahead at district/municipality level, using: past dengue cases, socioeconomic/inequality indicators, climate, and satellite‑derived urban form.
+A machine learning project leveraging Graph Neural Networks (GNNs) to predict dengue incidence across Brazilian municipalities using spatial adjacency and temporal patterns.
 
-    Wrap the model in an explainability layer that decomposes each prediction into contributions from structural inequality vs climate vs urban environment, providing global (across Brazil) and local (per district) explanations.
+## Table of Contents
 
-    Data modalities and prediction target
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Performance](#performance)
+- [Dataset](#dataset)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Methodology](#methodology)
+- [Results](#results)
+- [Contributing](#contributing)
+- [License](#license)
+- [Citation](#citation)
 
-    Target
-     
-        Monthly dengue cases or a binary “outbreak” label per district/municipality, e.g., as done in GeoSeeq Dengue and Rio‑focused forecasting.
+## Overview
 
-    Modalities
-    Structural inequality: census variables (income, overcrowding, sanitation, race, education, access to health services), leveraging Brazilian inequality and health surveys.
-    Historical epidemiology: past dengue (and possibly zika/chikungunya) case counts and rates.
-    Climate: temperature, rainfall, humidity indices at monthly resolution.
+Dengue fever is a major public health concern in tropical and subtropical regions. This project develops a spatiotemporal forecasting model that:
 
-    Satellite imagery: Sentinel‑2 or a prepared dengue imagery dataset to capture urban density, vegetation, standing water proxies, as in DengueNet‑style work.
+- **Captures spatial dependencies** between neighboring municipalities using graph structures
+- **Models temporal patterns** through sequential dengue incidence data
+- **Predicts future outbreaks** one week ahead at the municipality level
+- **Achieves competitive performance** with MASE of 0.92 (beating naive baseline by 8%)
 
-    Model and XAI design
-    Multimodal architecture
-        A tabular branch (gradient boosting or MLP) for structural and time‑series features, plus a CNN/ViT encoder for satellite tiles; fuse embeddings before the prediction head.
+The model combines Graph Convolutional Networks (GCN) for spatial feature learning with Gated Recurrent Units (GRU) for temporal sequence modeling.
 
-    Benchmark against a strong tabular model (e.g., CatBoost) like previous explainable dengue forecasters used for Rio de Janeiro.
+## Key Features
 
-    Explainability components
-    Global feature importance (SHAP/TreeSHAP or permutation importance) to show, on average, how much structural inequality vs climate vs history drives forecasts.
-    Local explanations per district and month (SHAP values, ICE plots) to reveal why the model flags a particular vulnerable area.
-    For imagery, Grad‑CAM or attention maps over satellite tiles to highlight where in the urban landscape the model “looks” when associating risk (e.g., dense informal settlements vs green zones).
+- **Spatiotemporal Modeling**: Integrates both geographic adjacency and time-series patterns
+- **Multi-scale Features**: Incorporates static features (area, regional codes) and dynamic features (incidence rates)
+- **Graph-Based Architecture**: Leverages municipality adjacency for disease spread modeling
+- **Scalable**: Handles 5,570+ municipalities across Brazil
+- **Production-Ready**: Includes data processing pipelines, model training, and evaluation metrics
 
-    A simple decomposition: variance explained or performance drop when you ablate entire blocks of features (inequality vs climate vs imagery) to quantify their relative importance.
+## Architecture
 
-    How it centers structural inequality
-    Make structural features first‑class citizens: explicitly group features into “structural inequality”, “climate”, “vector/environment”, and “history” and plot their grouped contributions for each prediction.
-    Use partial‑dependence and SHAP interaction plots to examine how inequality and climate interact: e.g., whether heavy rainfall only becomes high‑risk in areas with poor sanitation and high crowding.
+```
+Input Layer
+    ├── Dynamic Features (4-week sequence of incidence rates)
+    └── Static Features (area, regional codes)
+           ↓
+Graph Convolutional Layers (2 layers, 32 hidden units)
+    └── Spatial feature extraction via GCN
+           ↓
+Gated Recurrent Unit (64 hidden units)
+    └── Temporal sequence modeling
+           ↓
+MLP Prediction Head
+    └── Final incidence prediction
+```
 
-    Tie explanations back to the vulnerability framing of the British Academy project, which argues that dengue risk is produced by socio‑spatial inequalities in Brazil rather than just weather–mosquito dynamics.
+### Model Components
 
-    Suggested repo deliverables
-    Clean, reproducible pipeline: data download/preprocessing scripts for each modality, model training script, evaluation script, and a small demo notebook that:
-        trains a minimal multimodal model on 1–2 states or a single metropolis (e.g., Rio de Janeiro),
+1. **Input Processing**
+   - Dynamic: 4 weeks of historical incidence per 100k population
+   - Static: Geographic area (km²) + 5 regional categorical features
 
-    generates maps of predicted risk vs observed cases, and
+2. **Graph Convolutional Network**
+   - 2 GCN layers with ReLU activation
+   - 32-dimensional hidden representations
+   - Captures spatial disease spread patterns
 
-    renders a few case‑study districts with SHAP bar plots + satellite activation maps that a public‑health reader can interpret.
+3. **Temporal Modeling**
+   - GRU with 64 hidden units
+   - Processes graph-enhanced features over time
+   - Captures weekly outbreak dynamics
 
-    If you tell me your preferred framework (PyTorch Lightning vs pure PyTorch vs scikit‑learn + LightGBM) I can sketch a concrete architecture and XAI workflow that’s realistic to implement in a few weeks
+4. **Output Layer**
+   - 2-layer MLP (64 → 64 → 1)
+   - Predicts next week's incidence rate
 
-Help me set up this project and get started
-3:21 p.m.
+## 📊 Performance
 
-I'll help you set up this Structural Dengue Vulnerability Forecaster project. This is an excellent research direction that combines public health impact with technical innovation in explainable AI.
+Evaluation on held-out test set (20% of temporal data):
 
-Let me create a comprehensive project structure and starter code to get you going:
-Dengue Vulnerability Forecaster - Project Setup
-Code 
+| Metric | Value | Interpretation |
+|--------|-------|----------------|
+| **MASE** | 0.92 | Beats naive baseline by 8% |
+| **RMSSE** | 0.69 | 31% better than naive at avoiding large errors |
+| **MAE** | 44.6 | Average error of 44.6 cases per 100k |
+| **RMSE** | 126.4 | Root mean squared error |
+| **R²** | 0.54 | Explains 54% of variance |
 
-Now let me create the foundational code files to get you started:
-requirements.txt
-Code 
-Data Download Script - src/data/download.py
-Code 
-Multimodal Model Architecture - src/models/multimodal.py
-Code 
+**Key Findings:**
+- ✅ Model outperforms naive baseline (MASE < 1.0)
+- ✅ Strong performance on avoiding catastrophic errors (RMSSE = 0.69)
+- ✅ Captures meaningful spatial-temporal patterns (R² = 0.54)
 
+## 📁 Dataset
 
-Claude is AI and can make mistakes. Please double-check responses.
-# Structural Dengue Vulnerability Forecaster
+### Sources
+- **Dengue Data**: Brazilian Ministry of Health surveillance system
+- **Geographic Data**: IBGE (Brazilian Institute of Geography and Statistics)
+- **Coverage**: 5,570 municipalities across Brazil
+- **Time Period**: Multiple years of weekly epidemiological data
 
-## Project Overview
-A multimodal explainable AI system that predicts dengue risk 1-3 months ahead while decomposing contributions from structural inequality, climate, and urban environment at the neighborhood/municipality level in Brazil.
+### Features
+
+**Dynamic (Time-Varying)**
+- `p_inc100k`: Dengue incidence per 100,000 population
+- Weekly measurements by municipality
+
+**Static (Municipality-Level)**
+- `AREA_KM2`: Geographic area in square kilometers
+- `CD_UF`: State code
+- `CD_RGI`: Immediate geographic region
+- `CD_RGINT`: Intermediate geographic region
+- `CD_REGIAO`: Macro-region code
+- `CD_CONCURB`: Metropolitan area code
+
+### Data Structure
+```
+data/
+├── processed/
+│   ├── dengue_modeling.parquet    # Processed dengue time series
+│   └── edge_index.npy              # Spatial adjacency graph
+└── map/
+    └── brazil_municipalities.gpkg  # Geographic boundaries
+```
+
+## 🚀 Installation
+
+### Prerequisites
+- Python 3.10+
+- CUDA-capable GPU (optional, for faster training)
+
+### Setup
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/dengue-gnn-forecasting.git
+cd dengue-gnn-forecasting
+```
+
+2. **Create virtual environment**
+```bash
+conda create -n dengue python=3.10
+conda activate dengue
+```
+
+3. **Install dependencies**
+```bash
+# PyTorch (CPU version)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# PyTorch Geometric
+pip install torch-geometric
+
+# Other dependencies
+pip install -r requirements.txt
+```
+
+### Requirements
+```
+torch>=2.0.0
+torch-geometric>=2.3.0
+pandas>=2.0.0
+numpy>=1.24.0
+geopandas>=0.13.0
+matplotlib>=3.7.0
+scikit-learn>=1.3.0
+pyarrow>=12.0.0
+```
+
+## 💻 Usage
+
+### 1. Data Preparation
+
+Process raw dengue data and create spatial adjacency graph:
+
+```python
+import pandas as pd
+import geopandas as gpd
+import numpy as np
+
+# Load geographic data
+gdf = gpd.read_file("data/map/brazil_municipalities.gpkg")
+
+# Load dengue data
+df_dengue = pd.read_parquet("data/raw/dengue_data.parquet")
+
+# Create spatial adjacency (run once)
+# See notebooks/exploration.ipynb for full preprocessing
+```
+
+### 2. Train the Model
+
+```python
+from src.models.gnn import (
+    DengueSpatioTemporalDataset,
+    SpatioTemporalGNN,
+    train_one_epoch,
+    evaluate
+)
+import torch
+
+# Load data
+df = pd.read_parquet("data/processed/dengue_modeling.parquet")
+edge_index = torch.from_numpy(np.load("data/processed/edge_index.npy"))
+
+# Create datasets
+train_ds = DengueSpatioTemporalDataset(df, edge_index, T=4, train=True, train_frac=0.8)
+test_ds = DengueSpatioTemporalDataset(df, edge_index, T=4, train=False, train_frac=0.8)
+
+# Initialize model
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = SpatioTemporalGNN(
+    dyn_in=1,
+    static_in=6,
+    gcn_hidden=32,
+    gcn_layers=2,
+    rnn_hidden=64
+).to(device)
+
+# Train
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+loss_fn = torch.nn.MSELoss()
+
+for epoch in range(50):
+    train_loss = train_one_epoch(model, train_loader, optimizer, loss_fn)
+    test_loss = evaluate(model, test_loader, loss_fn)
+    print(f"Epoch {epoch+1} | Train: {train_loss:.4f} | Test: {test_loss:.4f}")
+```
+
+### 3. Make Predictions
+
+```python
+# Load trained model
+model.load_state_dict(torch.load("models/gnn_dengue.pt"))
+model.eval()
+
+# Generate predictions
+predictions = []
+with torch.no_grad():
+    for batch in test_loader:
+        pred = model(*batch)
+        predictions.append(pred.cpu().numpy())
+```
+
+### 4. Visualize Results
+
+```python
+import matplotlib.pyplot as plt
+
+# Plot predictions vs actual
+plt.scatter(targets, predictions, alpha=0.3)
+plt.plot([0, max(targets)], [0, max(targets)], 'r--')
+plt.xlabel('Actual Incidence')
+plt.ylabel('Predicted Incidence')
+plt.title('GNN Predictions vs Actual')
+plt.show()
+```
+
+For complete examples, see `notebooks/exploration.ipynb`.
 
 ## Project Structure
 
 ```
-dengue-forecaster/
-├── README.md
-├── requirements.txt
-├── setup.py
-├── config/
-│   ├── config.yaml              # Main configuration
-│   └── data_sources.yaml        # Data source URLs and paths
+dengue-gnn-forecasting/
 ├── data/
-│   ├── raw/                     # Raw downloaded data
-│   │   ├── epidemiology/
-│   │   ├── socioeconomic/
-│   │   ├── climate/
-│   │   └── satellite/
-│   ├── processed/               # Cleaned, aligned data
-│   └── features/                # Engineered features
+│   ├── processed/              # Processed datasets
+│   │   ├── dengue_modeling.parquet
+│   │   └── edge_index.npy
+│   └── map/                    # Geographic data
+│       └── brazil_municipalities.gpkg
 ├── notebooks/
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_feature_engineering.ipynb
-│   ├── 03_model_training.ipynb
-│   └── 04_explainability_demo.ipynb
+│   └── exploration.ipynb       # Data exploration and model training
 ├── src/
-│   ├── __init__.py
-│   ├── data/
-│   │   ├── __init__.py
-│   │   ├── download.py          # Data acquisition scripts
-│   │   ├── preprocessing.py     # Data cleaning
-│   │   └── loaders.py           # Dataset classes
-│   ├── features/
-│   │   ├── __init__.py
-│   │   ├── structural.py        # Inequality features
-│   │   ├── climate.py           # Climate features
-│   │   ├── epidemiology.py      # Historical case features
-│   │   └── satellite.py         # Image processing
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── multimodal.py        # Main multimodal architecture
-│   │   ├── tabular.py           # Tabular branch (CatBoost/MLP)
-│   │   ├── image.py             # CNN/ViT for satellite
-│   │   └── baseline.py          # Baseline models
-│   ├── explainability/
-│   │   ├── __init__.py
-│   │   ├── shap_analysis.py     # SHAP explanations
-│   │   ├── gradcam.py           # Satellite attention maps
-│   │   ├── ablation.py          # Feature group ablation
-│   │   └── visualization.py     # Plots and maps
-│   ├── evaluation/
-│   │   ├── __init__.py
-│   │   ├── metrics.py           # Performance metrics
-│   │   └── validation.py        # Cross-validation schemes
-│   └── utils/
-│       ├── __init__.py
-│       ├── spatial.py           # Spatial operations
-│       └── config.py            # Config loading
-├── scripts/
-│   ├── download_data.sh         # Automated data download
-│   ├── train_model.py           # Training script
-│   ├── evaluate.py              # Evaluation script
-│   └── generate_explanations.py # XAI generation
-├── tests/
-│   └── test_*.py
-└── outputs/
-    ├── models/                  # Saved model checkpoints
-    ├── predictions/             # Forecast outputs
-    ├── explanations/            # SHAP values, etc.
-    └── figures/                 # Visualizations
+│   └── models/
+│       └── gnn.py             # GNN model implementation
+├── models/                     # Saved model checkpoints
+│   └── gnn_dengue.pt
+├── results/                    # Visualizations and outputs
+├── requirements.txt
+└── README.md
 ```
 
-## Technology Stack Recommendation
+## Methodology
 
-**Framework: PyTorch Lightning + CatBoost Hybrid**
+### Graph Construction
 
-### Why this combination?
-- **PyTorch Lightning**: Clean, scalable for the image branch and multimodal fusion
-- **CatBoost**: Excellent baseline for tabular data, native categorical handling, fast SHAP
-- **Hybrid approach**: Use CatBoost for pure tabular baseline, PyTorch for multimodal
+Municipal adjacency is determined through:
+- **Geographic neighbors**: Municipalities sharing borders
+- **Bidirectional edges**: Disease can spread in both directions
+- **Edge count**: ~20-30K edges for 5,570 nodes (sparse graph)
 
-### Core Dependencies
-```
-# Deep Learning
-pytorch>=2.0.0
-pytorch-lightning>=2.0.0
-torchvision>=0.15.0
-timm>=0.9.0  # Pre-trained vision models
+### Training Strategy
 
-# Tabular ML
-catboost>=1.2.0
-lightgbm>=4.0.0
-xgboost>=2.0.0
+- **Temporal split**: 80% train, 20% test (chronological)
+- **Sequence length**: 4 weeks of historical data
+- **Prediction horizon**: 1 week ahead
+- **Optimization**: Adam optimizer with learning rate 1e-3
+- **Loss function**: Mean Squared Error (MSE)
+- **Batch size**: 1 (full graph per batch)
 
-# Explainability
-shap>=0.42.0
-captum>=0.6.0  # PyTorch interpretability
-scikit-learn>=1.3.0
+### Evaluation Metrics
 
-# Geospatial
-geopandas>=0.13.0
-rasterio>=1.3.0
-earthengine-api>=0.1.360  # Google Earth Engine
-sentinelhub>=3.9.0  # Sentinel-2 data
+1. **MASE (Mean Absolute Scaled Error)**
+   - Scales errors by naive forecast performance
+   - < 1.0 indicates beating naive baseline
 
-# Data & Viz
-pandas>=2.0.0
-numpy>=1.24.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
-plotly>=5.14.0
+2. **RMSSE (Root Mean Squared Scaled Error)**
+   - Similar to MASE but penalizes large errors
+   - Useful for detecting catastrophic predictions
 
-# Utils
-pyyaml>=6.0
-tqdm>=4.65.0
-wandb>=0.15.0  # Experiment tracking
-```
+3. **R² Score**
+   - Proportion of variance explained
+   - Indicates model's explanatory power
 
-## Key Data Sources for Brazil
+## Results
 
-### 1. Epidemiological Data
-- **SINAN (Sistema de Informação de Agravos de Notificação)**
-  - Source: Brazilian Ministry of Health
-  - URL: http://tabnet.datasus.gov.br/
-  - Format: Tabular (CSV/DBF)
-  - Coverage: Monthly dengue cases by municipality
-  
-- **InfoDengue**
-  - Source: Fiocruz
-  - API: https://info.dengue.mat.br/api/
-  - Format: JSON/CSV
-  - Coverage: Weekly epidemiological data, alarms
+### Model Performance
 
-### 2. Structural Inequality Data
-- **IBGE Census 2022**
-  - Source: Brazilian Institute of Geography and Statistics
-  - URL: https://www.ibge.gov.br/
-  - Variables: Income, education, race, household density, sanitation
-  
-- **IPEA Social Indicators**
-  - Source: Institute of Applied Economic Research
-  - Inequality indices, Gini coefficients
+The spatiotemporal GNN demonstrates strong forecasting capability:
 
-### 3. Climate Data
-- **INMET (National Meteorology Institute)**
-  - URL: https://portal.inmet.gov.br/
-  - Variables: Temperature, rainfall, humidity
-  - Resolution: Daily, station-based
-  
-- **ERA5-Land** (Alternative)
-  - Source: Copernicus Climate Data Store
-  - Global gridded reanalysis at 9km
+- **Spatial Learning**: Successfully captures disease spread patterns between adjacent municipalities
+- **Temporal Dynamics**: Models weekly outbreak trends and seasonality
+- **Generalization**: Maintains performance on unseen time periods (test set)
 
-### 4. Satellite Imagery
-- **Sentinel-2** (10m resolution)
-  - Source: ESA/Copernicus
-  - Access: Google Earth Engine or SentinelHub
-  - Bands: RGB + NIR for vegetation indices
-  
-- **DengueNet Dataset** (if available)
-  - Pre-processed satellite tiles for dengue-prone areas
+### Visualizations
 
-## Initial Implementation Phases
+Generated visualizations include:
+- Training/validation loss curves
+- Prediction scatter plots
+- Residual analysis
+- Geographic heatmaps of predictions vs actuals
+- Time series comparisons for selected municipalities
 
-### Phase 1: Data Pipeline (Week 1-2)
-1. Download sample data for Rio de Janeiro state
-2. Align temporal resolution (monthly aggregation)
-3. Spatial alignment of municipalities
-4. Create train/val/test splits (temporal)
+See `notebooks/exploration.ipynb` for interactive visualizations.
 
-### Phase 2: Baseline Models (Week 2-3)
-1. Tabular-only CatBoost model
-2. Feature importance analysis
-3. Establish performance benchmarks
+## Contributing
 
-### Phase 3: Multimodal Architecture (Week 3-4)
-1. Image encoder (ResNet/EfficientNet)
-2. Tabular encoder (MLP)
-3. Fusion module
-4. End-to-end training
+Contributions are welcome! Please follow these steps:
 
-### Phase 4: Explainability (Week 4-5)
-1. SHAP for tabular features
-2. Grad-CAM for satellite images
-3. Feature group ablation
-4. Interactive visualizations
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/improvement`)
+3. Commit your changes (`git commit -am 'Add new feature'`)
+4. Push to the branch (`git push origin feature/improvement`)
+5. Open a Pull Request
 
-### Phase 5: Case Studies (Week 5-6)
-1. Select 5-10 representative municipalities
-2. Generate local explanations
-3. Create interpretable reports
-4. Validate with domain experts
+### Development Guidelines
 
-## Starter Configuration
+- Follow PEP 8 style guidelines
+- Add docstrings to all functions
+- Include unit tests for new features
+- Update documentation as needed
 
-```yaml
-# config/config.yaml
-project:
-  name: dengue_vulnerability_forecaster
-  experiment_name: rio_baseline_v1
-  
-data:
-  region: rio_de_janeiro  # Start with single state
-  temporal_resolution: monthly
-  forecast_horizon: [1, 2, 3]  # months ahead
-  train_years: [2015, 2016, 2017, 2018, 2019]
-  val_years: [2020]
-  test_years: [2021, 2022]
-  
-features:
-  structural:
-    - income_per_capita
-    - gini_coefficient
-    - overcrowding_rate
-    - inadequate_sanitation_pct
-    - black_brown_population_pct
-    - education_years_avg
-    - health_access_index
-  
-  climate:
-    - temperature_mean
-    - temperature_max
-    - rainfall_total
-    - humidity_mean
-    - temperature_range
-  
-  epidemiology:
-    - dengue_cases_lag_1m
-    - dengue_cases_lag_2m
-    - dengue_cases_lag_3m
-    - dengue_rate_lag_1m
-    - cases_moving_avg_3m
-    - cases_trend
-  
-  satellite:
-    - image_size: [224, 224]
-    - bands: [red, green, blue, nir]
-    - derived: [ndvi, ndwi]
+## License
 
-model:
-  architecture: multimodal_fusion
-  tabular_branch:
-    type: catboost  # or mlp
-    params:
-      iterations: 1000
-      learning_rate: 0.03
-      depth: 6
-  
-  image_branch:
-    backbone: resnet50  # or efficientnet_b0
-    pretrained: true
-    freeze_backbone: false
-  
-  fusion:
-    method: concatenate  # or attention
-    hidden_dims: [256, 128]
-    dropout: 0.3
-  
-training:
-  batch_size: 32
-  epochs: 50
-  learning_rate: 0.001
-  optimizer: adam
-  scheduler: reduce_on_plateau
-  early_stopping_patience: 10
-  
-explainability:
-  shap:
-    feature_groups:
-      structural: [income_per_capita, gini_coefficient, ...]
-      climate: [temperature_mean, rainfall_total, ...]
-      epidemiology: [dengue_cases_lag_1m, ...]
-    n_samples: 100
-  
-  gradcam:
-    target_layer: layer4
-  
-  ablation:
-    groups: [structural, climate, epidemiology, satellite]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Citation
+
+If you use this work in your research, please cite:
+
+```bibtex
+@misc{dengue_gnn_2025,
+  title={Dengue Forecasting with Spatiotemporal Graph Neural Networks},
+  author={Your Name},
+  year={2025},
+  publisher={GitHub},
+  url={https://github.com/yourusername/dengue-gnn-forecasting}
+}
 ```
 
-## Quick Start Commands
+## 🙏 Acknowledgments
 
-```bash
-# 1. Setup environment
-conda create -n dengue python=3.10
-conda activate dengue
-pip install -r requirements.txt
-
-# 2. Download sample data (Rio de Janeiro)
-python scripts/download_data.sh --region rio_de_janeiro --years 2015-2022
-
-# 3. Preprocess data
-python -m src.data.preprocessing --config config/config.yaml
-
-# 4. Train baseline (tabular only)
-python scripts/train_model.py --model baseline_catboost --config config/config.yaml
-
-# 5. Train multimodal model
-python scripts/train_model.py --model multimodal --config config/config.yaml
-
-# 6. Generate explanations
-python scripts/generate_explanations.py --model_path outputs/models/best.ckpt
-
-# 7. Launch demo notebook
-jupyter notebook notebooks/04_explainability_demo.ipynb
-```
-
-## Expected Outputs
-
-### 1. Performance Metrics
-- MAE, RMSE for case count prediction
-- F1, Precision, Recall for outbreak detection
-- Temporal validation plots
-- Spatial error maps
-
-### 2. Global Explanations
-- Feature importance bar charts (grouped by modality)
-- Partial dependence plots
-- Feature interaction heatmaps
-- Variance decomposition pie chart
-
-### 3. Local Explanations
-- Per-municipality SHAP waterfall plots
-- Satellite attention maps overlaid on urban geography
-- Time-series decomposition of risk factors
-- Comparative case studies (high vs low vulnerability)
-
-### 4. Interactive Dashboard (Optional)
-- Map-based risk visualization
-- Click municipality → see explanation
-- Toggle feature groups on/off
-- Export reports
-
-## Next Steps
-
-1. **Choose your starting region**: Rio de Janeiro (rich data) or São Paulo (larger scale)?
-2. **Data access**: Do you have institutional access to SINAN/IBGE APIs?
-3. **Compute resources**: Local GPU or cloud (Colab/Kaggle)?
-4. **Timeline**: Research prototype (6 weeks) or production system (3+ months)?
-
-I can provide detailed starter code for any component once you confirm your preferences!
-
-# Dengue-Forecasting
+- Brazilian Ministry of Health for dengue surveillance data
+- IBGE for geographic boundary data
+- PyTorch Geometric team for the GNN framework
+- Open-source contributors to the scientific Python ecosystem
